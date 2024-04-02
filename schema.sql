@@ -1,6 +1,6 @@
 
 CREATE TABLE IF NOT EXISTS votes
 (
-  id textBite PRIMARY KEY,
+  id text PRIMARY KEY,
   vote text NOT NULL
 );
