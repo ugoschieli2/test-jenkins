@@ -1,0 +1,76 @@
+version: "3.8"
+services:
+  poll:
+    container_name: popeye_poll
+    restart: unless-stopped
+    build: poll
+    environment:
+      REDIS_HOST: redis
+    ports:
+      - 5000:80
+    depends_on:
+      - redis
+    networks:
+      - poll-tier
+
+  redis:
+    container_name: popeye_redis
+    restart: unless-stopped
+    image: redis
+    ports:
+      - 6379:6379
+    networks:
+      - poll-tier
+      - back-tier
+
+  result:
+    container_name: popeye_result
+    restart: unless-stopped
+    build: result
+    ports:
+      - 5001:80
+    environment:
+      POSTGRES_USER: popeye
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: popeye
+    depends_on:
+      - db
+    networks:
+      - result-tier
+
+  worker:
+    container_name: popeye_worker
+    restart: unless-stopped
+    build: worker
+    environment:
+      POSTGRES_USER: popeye
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: popeye
+    depends_on:
+      - db
+      - redis
+    networks:
+      - back-tier
+
+  db:
+    container_name: popeye_db
+    restart: unless-stopped
+    image: postgres:9
+    environment:
+      POSTGRES_USER: popeye
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: popeye
+    volumes:
+      - "./schema.sql:/docker-entrypoint-initdb.d/schema.sql"
+      - "db-data:/var/lib/postgresql/data"
+    networks:
+      - result-tier
+      - back-tier
+
+volumes:
+  db-data:
+
+networks:
+  poll-tier:
+  result-tier:
+  back-tier:
